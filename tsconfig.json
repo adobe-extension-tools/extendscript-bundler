@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "outDir": "./lib",
+    "allowJs": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "es3",
+    "strict": true,
+    "lib": ["es2015", "es2017"]
+  },
+  "include": [
+    "./src/**/*"
+  ],
+  "exclude": []
+}

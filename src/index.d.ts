@@ -1,0 +1,6 @@
+declare module 'browserify'
+declare module 'watchify'
+declare module 'prependify'
+declare module 'debug'
+declare module 'yuicompressor'
+declare module 'envify'

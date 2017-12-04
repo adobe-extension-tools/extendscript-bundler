@@ -1,17 +1,17 @@
 {
   "name": "extendscript-bundler",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.0.1",
+  "description": "A bundler for making ExtendScript + ScriptUI panels with LiveReload support",
   "main": "index.js",
   "bin": {
-    "es-bundler": "./bin/index.js"
+    "extendscript-bundler": "./bin/index.js"
   },
   "scripts": {
     "start": "tsc -w",
     "build": "tsc"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Koen Schmeets",
+  "license": "MIT",
   "devDependencies": {
     "@types/node": "^8.0.54"
   },

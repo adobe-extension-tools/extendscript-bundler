@@ -26,12 +26,31 @@ const escape = (str: string) => str.replace(/[\\"]/g, '\\$&')
 function sendJsxToApp(jsxFile: string, applicationPath: string) {
   log('-> sendJsxToApp')
   const appleScriptPath = path.join(os.tmpdir(), `evalinadobe.scpt`);
-  const code = `try {
-    $.evalFile("${jsxFile}");
-    $.writeln('Live-reloaded JSX');
-  } catch (err) {
-    $.writeln('Unable to livereload: ' + err.message + ' on line ' + err.line);
-  }`
+  const code = `$.global.errorToPretty = function (err) {
+  var stack = $.stack.split('\\n')
+  stack.shift()
+  var lines = (err.source && err.source.split('\\n')) || []
+  err.line--;
+  return {
+    name: err.name,
+    message: err.message,
+    line: err.line,
+    context: [
+      lines[err.line - 2] || '',
+      lines[err.line - 1] || '',
+      lines[err.line] || '',
+      lines[err.line + 1] || '',
+      lines[err.line + 2] || ''
+    ],
+    stack: stack
+  }
+}
+try {
+  $.evalFile("${jsxFile}");
+  $.writeln('Live-reloaded JSX');
+} catch (err) {
+  $.writeln('Unable to livereload: ' + JSON.stringify($.global.errorToPretty(err), undefined, 2));
+}`
   const appleScriptContents = `tell application "${applicationPath}"
   DoScript "${escape(code)}"
 end tell`;

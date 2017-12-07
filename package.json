@@ -1,6 +1,6 @@
 {
   "name": "extendscript-bundler",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A bundler for making ExtendScript + ScriptUI panels with LiveReload support",
   "main": "index.js",
   "bin": {

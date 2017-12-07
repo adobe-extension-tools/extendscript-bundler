@@ -10,15 +10,17 @@ import * as prependify from 'prependify'
 import * as envify from 'envify'
 import * as debug from 'debug'
 import * as yuicompressor from 'yuicompressor'
+import * as http from 'http'
 
 const log = debug('extendscript-bundler')
 
 interface BundlerOpts {
-  app: string,
-  live: boolean,
-  entry: string,
-  dest: string,
-  minify: boolean
+  app: string;
+  live: boolean;
+  entry: string;
+  dest: string;
+  minify: boolean;
+  logServerPort: number;
 }
 
 const escape = (str: string) => str.replace(/[\\"]/g, '\\$&')
@@ -80,6 +82,10 @@ function build(opts: BundlerOpts) {
 }
 
 function watch(opts: BundlerOpts) {
+  if (opts.logServerPort) {
+    startLogServer(opts)
+    process.env.LOG_SERVER_PORT = opts.logServerPort + ''
+  }
   log('-> watch')
   const bundler = getBundler(opts)
   bundler.plugin(watchify)
@@ -116,7 +122,40 @@ function watch(opts: BundlerOpts) {
   bundle()
 }
 
-export default (opts: any) => {
+function startLogServer(opts: BundlerOpts) {
+  log('-> startLogServer')
+  const server = http.createServer((req, res) => {
+    const { method, url } = req
+    let bodyChunks: any[] = []
+    req.on('data', (chunk) => {
+      bodyChunks.push(chunk)
+    })
+    .on('end', () => {
+      const body: string = Buffer.concat(bodyChunks).toString()
+      try {
+        const parsedBody = JSON.parse(body)
+        if (parsedBody.type && parsedBody.type === '__ERROR__') {
+          console.error(`Error: ${parsedBody.message} on line ${parsedBody.line}`)
+          console.error(`Context:`)
+          console.error('\t' + parsedBody.context.join('\n\t'))
+          console.error(`Stack:`)
+          console.error('\t' + parsedBody.stack.join('\n\t'))
+        } else {
+          console.log(parsedBody)
+        }
+      } catch (err) {}
+    })
+    res.writeHead(200, {
+      'Content-Type': 'text/plain'
+    })
+    res.end(JSON.stringify({
+      success: true
+    }))
+  })
+  server.listen(opts.logServerPort)
+}
+
+export default (opts: BundlerOpts) => {
   log(opts)
   if (opts.live) {
     watch(opts)

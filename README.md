@@ -1,11 +1,16 @@
 # extendscript-bundler
 
-This package makes it easy to start making extensions for the Adobe suite using ExtendScript.
+![status badge](https://aedtci.mtmograph.com/api/badges/adobe-extension-tools/extendscript-bundler/status.svg)
+
+This package makes it easy to start making extensions for the Adobe suite using ExtendScript and ScriptUI.
+
 It uses browserify to package multiple files together, and uses AppleScript (on macOS) to evaluate the code in your running application.
 
-The real cool thing about this is when it's used in conjunction with the extendscript-starter project.
-In this project the Windows instance is stored in a global variable and after you make a change to the code,
-The new code is evaluated and will find the old Window instance, and will reuse it after clearing all "groups" that are on it.
+The real cool thing about this is when it's used in conjunction with the `extendscript-starter` project.
+In that project, when loading the extension it looks if there is an existing `Window` instance (which is stored in a global variable on creation).
+When it finds one, it will remove all children from it and reuse it.
+
+This way you get an instant "refresh" whenever you make changes to a file!
 
 It looks like this (for After Effects):
 
@@ -31,8 +36,6 @@ export default (object, title, x = 0, y = 0) => {
 }
 ```
 
-TODO: explain this better & show some examples
-
-## Caveats
+## caveats
 
 - macOS only at this point, Windows support is coming soon

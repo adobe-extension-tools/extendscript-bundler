@@ -4,8 +4,7 @@ const fs = require('fs')
 const path = require('path')
 
 const args = process.argv.slice(2)
-
-if (args.length === 0 || (args.length === 1 && args[0] !== 'build')) {
+if (args.length === 0 || (args.length === 1 && args[0] !== 'build' && args[0] !== 'watch')) {
   args.unshift('watch')
 }
 

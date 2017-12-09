@@ -1,6 +1,7 @@
 module.exports = {
   live: true,
-  app: '/Applications/Adobe After Effects CC 2018/Adobe After Effects CC 2018.app',
   entry: __dirname + '/test.js',
-  dest: '/Applications/Adobe After Effects CC 2018/Scripts/ScriptUI Panels/Starter Panel.jsx'
+  dest: __dirname + '/bundle.jsx',
+  logServerPort: 8081,
+  devConnectPort: 8080
 }

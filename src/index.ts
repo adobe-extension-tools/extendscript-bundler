@@ -3,7 +3,7 @@
 import * as os from 'os'
 import * as path from 'path'
 import * as fs from 'fs'
-import { execSync } from 'child_process'
+import { execSync, spawn } from 'child_process'
 import * as browserify from 'browserify'
 import * as watchify from 'watchify'
 import * as prependify from 'prependify'
@@ -11,23 +11,24 @@ import * as envify from 'envify'
 import * as debug from 'debug'
 import * as yuicompressor from 'yuicompressor'
 import * as http from 'http'
+import * as fetch from 'node-fetch'
 
 const log = debug('extendscript-bundler')
 
 interface BundlerOpts {
-  app: string;
-  live: boolean;
-  entry: string;
+  tsEntry: string;
+  jsEntry: string;
   dest: string;
   minify: boolean;
-  logServerPort: number;
+  logServerPort?: number;
+  devConnectPort: number;
+  devConnectHost?: string;
 }
 
 const escape = (str: string) => str.replace(/[\\"]/g, '\\$&')
 
-function sendJsxToApp(jsxFile: string, applicationPath: string) {
+function sendJsxToApp(opts: BundlerOpts) {
   log('-> sendJsxToApp')
-  const appleScriptPath = path.join(os.tmpdir(), `evalinadobe.scpt`);
   const code = `$.global.errorToPretty = function (err) {
   var stack = $.stack.split('\\n')
   stack.shift()
@@ -48,22 +49,27 @@ function sendJsxToApp(jsxFile: string, applicationPath: string) {
   }
 }
 try {
-  $.evalFile("${jsxFile}");
+  $.evalFile('${opts.dest}');
   $.writeln('Live-reloaded JSX');
 } catch (err) {
   $.writeln('Unable to livereload: ' + JSON.stringify($.global.errorToPretty(err), undefined, 2));
 }`
-  const appleScriptContents = `tell application "${applicationPath}"
-  DoScript "${escape(code)}"
-end tell`;
-  fs.writeFileSync(appleScriptPath, appleScriptContents, 'utf8');
-  execSync(`osascript "${appleScriptPath}"`)
+  fetch(`http://${opts.devConnectHost || 'localhost'}:${opts.devConnectPort}`, {
+    method: 'POST',
+    headers: [
+      ['content-type', 'application/json']
+    ],
+    body: JSON.stringify({ jsx: code })
+  })
+  .catch((err: Error) => {
+    console.log(`Unable to connect to "Dev Connect" (${`http://${opts.devConnectHost || 'localhost'}:${opts.devConnectPort}`}) extension, did you install and open it in the target application?`)
+  })
 }
 
 function getBundler(opts: BundlerOpts) {
   log('-> getBundler')
   const bundler = browserify({
-    entries: [opts.entry],
+    entries: [opts.jsEntry],
     cache: {},
     packageCache: {}
   })
@@ -72,8 +78,40 @@ function getBundler(opts: BundlerOpts) {
   return bundler
 }
 
-function build(opts: BundlerOpts) {
+function typescriptCompile(opts: BundlerOpts) {
+  console.log('-> typescriptCompile')
+  let tscPath = `${__dirname}/../../.bin/tsc`
+  if (!fs.existsSync(tscPath)) {
+    tscPath = `${__dirname}/../node_modules/.bin/tsc`
+  }
+  try {
+    execSync(`${tscPath} --project ${opts.tsEntry}`)
+  } catch (err) {
+    console.log(err.stdout.toString())
+    process.exit(1)
+  }
+}
+
+function typescriptWatch(opts: BundlerOpts) {
+  console.log('-> typescriptWatch')
+  let tscPath = `${__dirname}/../../.bin/tsc`
+  if (!fs.existsSync(tscPath)) {
+    tscPath = `${__dirname}/../node_modules/.bin/tsc`
+  }
+  const jsTsc = spawn(tscPath, ['--watch', '--project', opts.tsEntry], {
+    env: process.env,
+    stdio: 'inherit'
+  })
+  process.on('exit', function () {
+    jsTsc.kill()
+  })
+}
+
+export function build(opts: BundlerOpts) {
   log('-> build')
+  try {
+    typescriptCompile(opts)
+  } catch (err) {}
   const bundler = getBundler(opts)
   const writeStream = fs.createWriteStream(opts.dest)
   bundler.bundle()
@@ -81,12 +119,14 @@ function build(opts: BundlerOpts) {
     .pipe(writeStream)
 }
 
-function watch(opts: BundlerOpts) {
+export function watch(opts: BundlerOpts) {
+  log('-> watch')  
+  typescriptCompile(opts)
+  typescriptWatch(opts)
   if (opts.logServerPort) {
     startLogServer(opts)
     process.env.LOG_SERVER_PORT = opts.logServerPort + ''
   }
-  log('-> watch')
   const bundler = getBundler(opts)
   bundler.plugin(watchify)
   function bundle() {
@@ -112,7 +152,11 @@ function watch(opts: BundlerOpts) {
           }
         )
       }
-      sendJsxToApp(opts.dest, opts.app)
+      try {
+        sendJsxToApp(opts)
+      } catch (err) {
+        console.log(err)
+      }
     })
     bundler.bundle()
       .on('error', (err: Error) => console.error(err.message))
@@ -153,13 +197,4 @@ function startLogServer(opts: BundlerOpts) {
     }))
   })
   server.listen(opts.logServerPort)
-}
-
-export default (opts: BundlerOpts) => {
-  log(opts)
-  if (opts.live) {
-    watch(opts)
-  } else {
-    build(opts)
-  }
 }

@@ -1,6 +1,6 @@
 {
   "name": "extendscript-bundler",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A bundler for making ExtendScript + ScriptUI panels with LiveReload support",
   "main": "index.js",
   "bin": {
@@ -13,15 +13,16 @@
   "author": "Koen Schmeets",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^8.0.54",
-    "typescript": "^2.6.2"
+    "@types/node": "^8.0.54"
   },
   "dependencies": {
     "browserify": "^14.5.0",
     "debug": "^3.1.0",
     "envify": "^4.1.0",
+    "node-fetch": "^1.7.3",
     "prependify": "^1.3.0",
     "watchify": "^3.9.0",
+    "typescript": "^2.6.2",
     "yuicompressor": "^2.4.8"
   }
 }

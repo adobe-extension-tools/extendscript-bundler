@@ -33,17 +33,16 @@ function sendJsxToApp(opts: BundlerOpts) {
   var stack = $.stack.split('\\n')
   stack.shift()
   var lines = (err.source && err.source.split('\\n')) || []
-  err.line--;
   return {
     name: err.name,
     message: err.message,
     line: err.line,
     context: [
+      lines[err.line - 3] || '',
       lines[err.line - 2] || '',
       lines[err.line - 1] || '',
       lines[err.line] || '',
-      lines[err.line + 1] || '',
-      lines[err.line + 2] || ''
+      lines[err.line + 1] || ''
     ],
     stack: stack
   }
@@ -179,10 +178,12 @@ function startLogServer(opts: BundlerOpts) {
       try {
         const parsedBody = JSON.parse(body)
         if (parsedBody.type && parsedBody.type === '__ERROR__') {
-          console.error(`Error: ${parsedBody.message} on line ${parsedBody.line}`)
-          console.error(`Context:`)
+          parsedBody.context[2] = `\x1b[31m${parsedBody.context[2]}\x1b[0m`
+          console.error('\x1b[4m%s\x1b[0m', `Error:`)
+          console.error(`\x1b[31m\t${parsedBody.message} on line ${parsedBody.line}\x1b[0m`)
+          console.error('\x1b[4m%s\x1b[0m', `Context:`)
           console.error('\t' + parsedBody.context.join('\n\t'))
-          console.error(`Stack:`)
+          console.error('\x1b[4m%s\x1b[0m', `Stack:`)
           console.error('\t' + parsedBody.stack.join('\n\t'))
         } else {
           console.log(parsedBody)

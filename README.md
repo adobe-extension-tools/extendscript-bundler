@@ -1,6 +1,7 @@
 # extendscript-bundler
 
 [![Build Status](https://aedtci.mtmograph.com/api/badges/adobe-extension-tools/extendscript-bundler/status.svg)](https://aedtci.mtmograph.com/adobe-extension-tools/extendscript-bundler)
+[![npm version](https://badge.fury.io/js/extendscript-bundler.svg)](https://www.npmjs.com/extendscript-bundler)
 
 This package makes it easy to start making extensions for the Adobe suite using ExtendScript and ScriptUI.
 
